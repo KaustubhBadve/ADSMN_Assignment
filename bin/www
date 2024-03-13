@@ -1,0 +1,15 @@
+const express = require("express");
+
+const app = express();
+
+app.use(express.json());
+
+const PORT = 3034;
+
+app.listen(PORT, async () => {
+  try {
+    console.log(`Server started at PORT: ${PORT}`);
+  } catch (error) {
+    console.log(error);
+  }
+});
