@@ -120,7 +120,7 @@ exports.userRegistration = async (req, res) => {
       let newUser = await query.createUser(userDetails);
       userDetails = {
         ...userDetails,
-        ...newUser?.id,
+        id:newUser?.id,
       };
       token = await genNewToken(userDetails, res);
       return response.sendResponse(

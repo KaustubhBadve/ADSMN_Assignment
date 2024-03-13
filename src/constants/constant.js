@@ -3,6 +3,7 @@ module.exports = Object.freeze({
       table: {
         VERIFICATION_MASTER: "verificationmaster",
         USER_MASTER: "usersmaster",
+        SCORE_MASTER: "scoremaster"
       },
     },
     response_code: {
