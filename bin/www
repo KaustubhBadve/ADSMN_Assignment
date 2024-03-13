@@ -1,9 +1,16 @@
 const express = require("express");
+const authrouter = require("../src/routes/auth");
+const router = require("../src/routes/auth");
+const db = require("../src/models");
 
 const app = express();
 
 app.use(express.json());
 
+app.use("/api", router);
+app.use("/api", authrouter);
+
+// db.sequelize.sync({ force: false, alter: true });
 const PORT = 3034;
 
 app.listen(PORT, async () => {

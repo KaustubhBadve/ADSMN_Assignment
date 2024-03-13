@@ -1,11 +1,14 @@
-const router=require("express").Router()
+const authrouter = require("express").Router();
 
+const auth = require("../controllers/auth");
+const errorValidator = require("../middlewares/validators/user");
 
-const auth=require("../controllers/auth")
+authrouter.post("/sendotp", errorValidator.SEND_OTP, auth.sendOtp);
 
-router.post("/sendotp",auth.sendOtp)
+authrouter.post(
+  "/registration",
+  errorValidator.USER_REGISTRATION,
+  auth.userRegistration
+);
 
-router.post("/registration",auth.userRegistration)
-
-
-module.exports = router;
+module.exports = authrouter;
