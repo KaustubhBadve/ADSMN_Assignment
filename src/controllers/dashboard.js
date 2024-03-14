@@ -77,11 +77,73 @@ exports.saveScore = async (req, res) => {
   }
 };
 
-exports.overAllScore = (req, res) => {
-  try {
-  } catch (error) {
-    console.log(error);
-  }
+exports.overAllScore = async(req, res) => {
+    try {
+        let errors = await validationResult(req);
+        if (!errors.isEmpty()) {
+          return response.sendResponse(
+            constant.response_code.BAD_REQUEST,
+            null,
+            null,
+            res,
+            errors
+          );
+        }
+    
+        const token = req.token;
+        let userId = token?.id;
+
+        const data = await db.sequelize.query(
+            `SELECT
+            totalScore,
+            userRank
+        FROM (
+            SELECT
+                userId,
+                SUM(score) AS totalScore,
+                RANK() OVER (ORDER BY SUM(score) DESC) AS userRank
+            FROM
+                scoremaster 
+            GROUP BY
+                userId
+        ) AS temp
+        WHERE
+            userId = :userId`,
+            {
+              nest: true,
+              mapToModel: true,
+              replacements: {
+                userId,
+              },
+            }
+          );
+
+          if (!data.length) {
+            return response.sendResponse(
+              constant.response_code.BAD_REQUEST,
+              "No data found",
+              null,
+              res,
+              null
+            );
+          }
+        
+        return response.sendResponse(
+          constant.response_code.SUCCESS,
+          null,
+          data[0],
+          res,
+          null
+        );
+      } catch (err) {
+        console.log(err);
+        return response.sendResponse(
+          constant.response_code.INTERNAL_SERVER_ERROR,
+          err.message || constant.STRING_CONSTANTS.SOME_ERROR_OCCURED,
+          null,
+          res
+        );
+      }
 };
 
 exports.weeklyScoreDashboard = (req, res) => {

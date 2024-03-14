@@ -10,7 +10,7 @@ router.post(
   dashboard.saveScore
 );
 
-router.post("/dashboard", validateToken(), dashboard.overAllScore);
+router.get("/userprogress", validateToken(), dashboard.overAllScore);
 
 router.post("/weeklyreport", validateToken(), dashboard.weeklyScoreDashboard);
 
