@@ -16,7 +16,7 @@ const validateToken = () => (req, res, next) => {
           null
         );
       } else {
-        req.token={id:decoded?.id}
+        req.token = { id: decoded?.id };
         return next();
       }
     });

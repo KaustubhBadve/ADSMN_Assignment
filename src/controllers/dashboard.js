@@ -25,6 +25,7 @@ exports.saveScore = async (req, res) => {
     const start = date.valueOf();
     const end = moment(date).endOf("day").valueOf();
 
+
     const checkLimit = await db.sequelize.query(
       `SELECT
         COUNT(*) AS scoreCount
@@ -61,7 +62,7 @@ exports.saveScore = async (req, res) => {
 
     return response.sendResponse(
       constant.response_code.SUCCESS,
-      null,
+      "Score updated",
       null,
       res,
       null
@@ -77,24 +78,24 @@ exports.saveScore = async (req, res) => {
   }
 };
 
-exports.overAllScore = async(req, res) => {
-    try {
-        let errors = await validationResult(req);
-        if (!errors.isEmpty()) {
-          return response.sendResponse(
-            constant.response_code.BAD_REQUEST,
-            null,
-            null,
-            res,
-            errors
-          );
-        }
-    
-        const token = req.token;
-        let userId = token?.id;
+exports.overAllScore = async (req, res) => {
+  try {
+    let errors = await validationResult(req);
+    if (!errors.isEmpty()) {
+      return response.sendResponse(
+        constant.response_code.BAD_REQUEST,
+        null,
+        null,
+        res,
+        errors
+      );
+    }
 
-        const data = await db.sequelize.query(
-            `SELECT
+    const token = req.token;
+    let userId = token?.id;
+
+    const data = await db.sequelize.query(
+      `SELECT
             totalScore,
             userRank
         FROM (
@@ -109,46 +110,134 @@ exports.overAllScore = async(req, res) => {
         ) AS temp
         WHERE
             userId = :userId`,
-            {
-              nest: true,
-              mapToModel: true,
-              replacements: {
-                userId,
-              },
-            }
-          );
-
-          if (!data.length) {
-            return response.sendResponse(
-              constant.response_code.BAD_REQUEST,
-              "No data found",
-              null,
-              res,
-              null
-            );
-          }
-        
-        return response.sendResponse(
-          constant.response_code.SUCCESS,
-          null,
-          data[0],
-          res,
-          null
-        );
-      } catch (err) {
-        console.log(err);
-        return response.sendResponse(
-          constant.response_code.INTERNAL_SERVER_ERROR,
-          err.message || constant.STRING_CONSTANTS.SOME_ERROR_OCCURED,
-          null,
-          res
-        );
+      {
+        nest: true,
+        mapToModel: true,
+        replacements: {
+          userId,
+        },
       }
+    );
+
+    if (!data.length) {
+      return response.sendResponse(
+        constant.response_code.BAD_REQUEST,
+        "No data found",
+        null,
+        res,
+        null
+      );
+    }
+
+    return response.sendResponse(
+      constant.response_code.SUCCESS,
+      null,
+      data[0],
+      res,
+      null
+    );
+  } catch (err) {
+    console.log(err);
+    return response.sendResponse(
+      constant.response_code.INTERNAL_SERVER_ERROR,
+      err.message || constant.STRING_CONSTANTS.SOME_ERROR_OCCURED,
+      null,
+      res
+    );
+  }
 };
 
-exports.weeklyScoreDashboard = (req, res) => {
+exports.weeklyScoreDashboard = async (req, res) => {
   try {
-  } catch (error) {
-    console.log(error);
+    let errors = await validationResult(req);
+    if (!errors.isEmpty()) {
+      return response.sendResponse(
+        constant.response_code.BAD_REQUEST,
+        null,
+        null,
+        res,
+        errors
+      );
+    }
+
+    const token = req.token;
+    let userId = token?.id;
+
+    const data = await db.sequelize.query(
+      `SELECT
+            json_arrayagg(
+              json_object(
+                "weekNo",
+                weekNo,
+                "totalScore",
+                totalScore,
+                "rank",
+                userRank
+              )
+            ) as weeks
+          FROM
+            (
+              SELECT
+                weekNo,
+                totalScore,
+                userId,
+                RANK() OVER (
+                  PARTITION BY weekNo
+                  ORDER BY
+                    totalScore DESC
+                ) AS userRank
+              FROM
+                (
+                  SELECT
+                    userId,
+                    DATEDIFF(FROM_UNIXTIME(createdAt / 1000), '2024-03-01') DIV 7 + 1 AS weekNo,
+                    SUM(score) AS totalScore
+                  FROM
+                    scoremaster
+                  WHERE
+                    createdAt > 1709231400000
+                  GROUP BY
+                    userId,
+                    DATEDIFF(FROM_UNIXTIME(createdAt / 1000), '2024-03-01') DIV 7 + 1
+                ) AS weeklyScores
+            ) AS rankedScores
+          WHERE
+            userId = 1
+          ORDER BY
+            weekNo ASC;`,
+      {
+        nest: true,
+        mapToModel: true,
+        replacements: {
+          userId,
+        },
+      }
+    );
+
+    if (data?.length && !data[0].weeks) {
+      return response.sendResponse(
+        constant.response_code.BAD_REQUEST,
+        "No data found",
+        null,
+        res,
+        null
+      );
+    }
+
+    return response.sendResponse(
+      constant.response_code.SUCCESS,
+      null,
+      data[0],
+      res,
+      null
+    );
+  } catch (err) {
+    console.log(err);
+    return response.sendResponse(
+      constant.response_code.INTERNAL_SERVER_ERROR,
+      err.message || constant.STRING_CONSTANTS.SOME_ERROR_OCCURED,
+      null,
+      res
+    );
   }
 };

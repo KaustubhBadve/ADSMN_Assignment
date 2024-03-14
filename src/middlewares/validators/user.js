@@ -30,5 +30,20 @@ const Errors = {
       .notEmpty()
       .isLength({ min: 4, max: 4 }),
   ],
+  USER_LOGIN: [
+    check(
+      "mobileNo",
+      "Mobile Number should be numeric and length must be 10 digit"
+    )
+      .isNumeric()
+      .isInt({ gt: 999999999 })
+      .notEmpty()
+      .isLength({ min: 10, max: 10 }),
+    check("otp", "OTP should be numeric and length must be 4 digit")
+      .isNumeric()
+      .isInt({ gt: 999 })
+      .notEmpty()
+      .isLength({ min: 4, max: 4 }),
+  ],
 };
 module.exports = Errors;

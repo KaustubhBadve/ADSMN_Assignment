@@ -4,6 +4,7 @@ const constant = require("../constants/constant");
 const query = require("../lib/queries/users");
 const jwt = require("jsonwebtoken");
 
+// function to send static otp
 exports.sendOtp = async (req, res) => {
   try {
     let errors = await validationResult(req);
@@ -17,7 +18,7 @@ exports.sendOtp = async (req, res) => {
       );
     }
     let body = req?.body;
-    const otp = "1234";
+    const otp = constant?.STATIC_OTP;
     const expiryTime = Date.now() + 60 * 1000;
 
     let alreadyExists = await query.findMobileNo(body?.mobileNo);
@@ -53,6 +54,7 @@ exports.sendOtp = async (req, res) => {
   }
 };
 
+// userRegistration
 exports.userRegistration = async (req, res) => {
   try {
     let errors = await validationResult(req);
@@ -142,6 +144,7 @@ exports.userRegistration = async (req, res) => {
   }
 };
 
+// function to generate new JWT token
 const genNewToken = async (payload, res) => {
   try {
     var token = jwt.sign(payload, constant.JWT_SECRET, {
@@ -153,6 +156,90 @@ const genNewToken = async (payload, res) => {
     return response.sendResponse(
       constant.response_code.INTERNAL_SERVER_ERROR,
       "Error in generating token",
+      null,
+      res
+    );
+  }
+};
+
+// userLogin
+exports.userLogin = async (req, res) => {
+  try {
+    let errors = await validationResult(req);
+    if (!errors.isEmpty()) {
+      return response.sendResponse(
+        constant.response_code.BAD_REQUEST,
+        null,
+        null,
+        res,
+        errors
+      );
+    }
+    let body = req?.body;
+
+    let alreadyExists = await query.findUser(body?.mobileNo);
+
+    if (!alreadyExists) {
+      errors.errors.push({
+        msg: `User not found, please register first`,
+      });
+      return response.sendResponse(
+        constant.response_code.BAD_REQUEST,
+        null,
+        null,
+        res,
+        errors
+      );
+    } 
+
+      let alreadyExistsOtp = await query.findMobileNo(body?.mobileNo);
+      if (!alreadyExistsOtp || alreadyExistsOtp?.otp !== body?.otp) {
+        errors.errors.push({
+          msg: `Invalid OTP`,
+        });
+        return response.sendResponse(
+          constant.response_code.BAD_REQUEST,
+          null,
+          null,
+          res,
+          errors
+        );
+      }
+
+      const timeDiff = Date.now() - alreadyExistsOtp?.otpGeneratedAt;;
+      const oneMinute = 60 * 1000;
+      if (timeDiff >= oneMinute) {
+        errors.errors.push({
+          msg: `OTP expired`,
+        });
+        return response.sendResponse(
+          constant.response_code.BAD_REQUEST,
+          null,
+          null,
+          res,
+          errors
+        );
+      }
+
+
+      let userDetails = {
+        mobileNo: body?.mobileNo,
+        id:alreadyExists?.id
+      };
+      token = await genNewToken(userDetails, res);
+      return response.sendResponse(
+        constant.response_code.SUCCESS,
+        "Login Succesfull",
+        token,
+        res,
+        null
+      );
+    
+  } catch (err) {
+    console.log(err);
+    return response.sendResponse(
+      constant.response_code.INTERNAL_SERVER_ERROR,
+      err.message || constant.STRING_CONSTANTS.SOME_ERROR_OCCURED,
       null,
       res
     );

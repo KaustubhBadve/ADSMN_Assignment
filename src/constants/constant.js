@@ -27,6 +27,7 @@ module.exports = Object.freeze({
       ENDPOINT_NOT_FOUND: "Endpoint not found at server",
       INVALID_AUTHORIZATION: "Unauthorized Request",
     },
-    JWT_SECRET:"adsmn"
+    JWT_SECRET:"adsmn",
+    STATIC_OTP:1234
   });
   

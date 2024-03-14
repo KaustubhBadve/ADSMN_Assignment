@@ -5,7 +5,7 @@ const Errors = {
     check("score", "Score should be numeric")
       .isNumeric()
       .isInt({ min: 50, max: 500 })
-      .withMessage("Score should be between 50 to 500")
+      .withMessage("Score should be in between 50 to 500")
       .notEmpty()
       .withMessage("Score should not be empty"),
   ],
